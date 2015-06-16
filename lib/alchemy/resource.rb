@@ -34,10 +34,14 @@ module Alchemy
   #
   # == Add attributes
   #
-  # You might want to show or sort by some more attributes that might be methods. These attributes will be skipped (not editable) by default.
-  # To define your own set of added attributes, define a class method +added_alchemy_resource_attributes like the following:
+  # You might want to show or sort by some more attributes that might be methods.
+  # These attributes will be restricted (not editable) by default, and you cannot search for them,
+  # either. To define your own set of added attributes, define a class method
+  # +additional_alchemy_resource_attributes like the following:
   #
-  #     def self.added_alchemy_resource_attributes
+  # === Example
+  #
+  #     def self.additional_alchemy_resource_attributes
   #       [
   #         {name: 'location', type: 'string'},
   #         {name: 'attending', type: 'boolean'}
@@ -46,7 +50,8 @@ module Alchemy
   #
   # == Restrict attributes
   #
-  # Beside skipping certain attributes you can also restrict them. Restricted attributes can not be edited by the user but still be seen in the index view.
+  # Beside skipping certain attributes you can also restrict them. Restricted attributes can not be
+  # edited by the user but still be seen in the index view.
   # No attributes are restricted by default.
   #
   # === Example
@@ -151,7 +156,7 @@ module Alchemy
 
     def attributes
       @_attributes ||= self.model.columns.collect do |col|
-        unless self.skipped_attributes.include?(col.name)
+        unless skipped_attributes.include?(col.name)
           {
             name: col.name,
             type: resource_column_type(col),
@@ -162,7 +167,7 @@ module Alchemy
     end
 
     def editable_attributes
-      attributes.reject { |h| self.restricted_attributes.map(&:to_s).include?(h[:name].to_s) }
+      attributes.reject { |h| restricted_attributes.map(&:to_s).include?(h[:name].to_s) }
     end
 
     # Returns all columns that are searchable
@@ -170,7 +175,7 @@ module Alchemy
     # For now it only uses string type columns
     #
     def searchable_attributes
-      self.attributes.select { |a| a[:type].to_sym == :string }
+      attributes.select { |a| a[:type].to_sym == :string } - added_attributes
     end
 
     def in_engine?
@@ -197,6 +202,19 @@ module Alchemy
       false
     end
 
+    # Return attributes that should be viewable but not editable.
+    #
+    def restricted_attributes
+      if model.respond_to?(:restricted_alchemy_resource_attributes)
+        attrs = model.restricted_alchemy_resource_attributes
+      else
+        attrs = []
+      end
+      attrs + added_attributes
+    end
+
+    private
+
     # Return attributes that should neither be viewable nor editable.
     #
     def skipped_attributes
@@ -211,25 +229,12 @@ module Alchemy
     # activerecord attributes.
     #
     def added_attributes
-      if model.respond_to?(:added_alchemy_resource_attributes)
-        model.added_alchemy_resource_attributes
+      if model.respond_to?(:additional_alchemy_resource_attributes)
+        model.additional_alchemy_resource_attributes
       else
         []
       end
     end
-
-    # Return attributes that should be viewable but not editable.
-    #
-    def restricted_attributes
-      if model.respond_to?(:restricted_alchemy_resource_attributes)
-        attrs = model.restricted_alchemy_resource_attributes
-      else
-        attrs = []
-      end
-      attrs + added_attributes
-    end
-
-    private
 
     def guess_model_from_controller_path
       resource_array.join('/').classify.constantize
