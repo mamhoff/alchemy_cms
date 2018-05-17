@@ -191,8 +191,8 @@ Alchemy.ElementEditors =
     element_id = $element.attr("id").replace(/\D/g, "")
     @selectElement($element)
     @selectElementInPreview(element_id)
-    # Element submit button needs to keep it's default event
-    e.preventDefault() unless $target.is(':submit')
+    # Inputs and labels need to handle their clicks.
+    e.preventDefault() unless $target.is('input, label')
     return
 
   # Double click event handler for element head.
