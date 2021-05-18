@@ -175,6 +175,8 @@ module Alchemy
         mask[1] / (image_file_height || 1),
       ].max
 
+      return nil if zoom.zero?
+
       [(mask[0] / zoom), (mask[1] / zoom)].map(&:round)
     end
 
@@ -190,6 +192,7 @@ module Alchemy
 
     def point_from_string(string)
       return if string.nil?
+
       string.split("x", 2).map(&:to_i)
     end
 
